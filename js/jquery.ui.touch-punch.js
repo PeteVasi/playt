@@ -1,7 +1,9 @@
 /*!
- * jQuery UI Touch Punch 0.2.2
+ * jQuery UI Touch Punch 0.2.3
+ * (+ pull req #151)
+ * (+ double tap changes by Pete Vasiliauskas (probably should have my own fork))
  *
- * Copyright 2011, Dave Furfero
+ * Copyright 2011–2014, Dave Furfero
  * Dual licensed under the MIT or GPL Version 2 licenses.
  *
  * Depends:
@@ -20,6 +22,7 @@
 
   var mouseProto = $.ui.mouse.prototype,
       _mouseInit = mouseProto._mouseInit,
+      _mouseDestroy = mouseProto._mouseDestroy,
       touchHandled;
 
   /**
@@ -79,7 +82,7 @@
     touchHandled = true;
 
     // Track movement to determine if interaction was a click
-    self._touchMoved = false;
+    self._touchMoved = 0;
 
     // Simulate the mouseover event
     simulateMouseEvent(event, 'mouseover');
@@ -102,8 +105,8 @@
       return;
     }
 
-    // Interaction was not a click
-    this._touchMoved = true;
+    // Interaction was less likely to be a click
+    this._touchMoved +=1;
 
     // Simulate the mousemove event
     simulateMouseEvent(event, 'mousemove');
@@ -126,11 +129,23 @@
     // Simulate the mouseout event
     simulateMouseEvent(event, 'mouseout');
 
-    // If the touch interaction did not move, it should trigger a click
-    if (!this._touchMoved) {
+    // If the touch interaction did not move (much), it should trigger a click
+    if (this._touchMoved<=5) {
 
       // Simulate the click event
-      // TODO: PV: REMOVE HACK     simulateMouseEvent(event, 'click');
+      simulateMouseEvent(event, 'click');
+      
+      // Simulate a double-click if we're fast enough
+      var now = new Date().getTime();
+      this._lastClick = this._lastClick || now + 1 /** the first time this will make delta a negative number */;
+      var delta = now - this._lastClick;
+      if (delta < 500 && delta > 0) {
+          simulateMouseEvent(event, 'dblclick');
+      }
+      this._lastClick = now;
+
+    } else {
+      this._lastClick = false;
     }
 
     // Unset the flag to allow other widgets to inherit the touch event
@@ -148,13 +163,32 @@
     var self = this;
 
     // Delegate the touch handlers to the widget's element
-    self.element
-      .bind('touchstart', $.proxy(self, '_touchStart'))
-      .bind('touchmove', $.proxy(self, '_touchMove'))
-      .bind('touchend', $.proxy(self, '_touchEnd'));
+    self.element.bind({
+      touchstart: $.proxy(self, '_touchStart'),
+      touchmove: $.proxy(self, '_touchMove'),
+      touchend: $.proxy(self, '_touchEnd')
+    });
 
     // Call the original $.ui.mouse init method
     _mouseInit.call(self);
+  };
+
+  /**
+   * Remove the touch event handlers
+   */
+  mouseProto._mouseDestroy = function () {
+    
+    var self = this;
+
+    // Delegate the touch handlers to the widget's element
+    self.element.unbind({
+      touchstart: $.proxy(self, '_touchStart'),
+      touchmove: $.proxy(self, '_touchMove'),
+      touchend: $.proxy(self, '_touchEnd')
+    });
+
+    // Call the original $.ui.mouse destroy method
+    _mouseDestroy.call(self);
   };
 
 })(jQuery);
