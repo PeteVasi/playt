@@ -1,3 +1,10 @@
+/// <reference path="typings/jquery/jquery.d.ts"/>
+/// <reference path="js/jquery-1.11.0.js" />
+/// <reference path="js/jquery-ui-1.10.4.custom.js" />
+/// <reference path="js/jQueryRotate.js" />
+/// <reference path="js/jquery.ui.touch-punch.js" />
+/// <reference path="playtStatic.js" />
+
 $(function() {
     var nextZIndex = 1, urlParams;
 
