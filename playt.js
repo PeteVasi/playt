@@ -6,7 +6,7 @@
 /// <reference path="playtStatic.js" />
 
 $(function() {
-    var nextZIndex = 1, urlParams;
+    var nextZIndex = 1, urlParams, allowReroll = true, allowRotateCards = true, allowRotateDice = true;
 
     // Extract URL params
     (function () {
@@ -40,6 +40,15 @@ $(function() {
         var c, d, i;
         
         if (!$.isEmptyObject(urlParams)) {
+            if (urlParams['_reroll'] === 'false') {
+                allowReroll = false;
+            }
+            if (urlParams['_tap'] === 'false') {
+                allowRotateCards = false;
+            }
+            if (urlParams['_rotate'] === 'false') {
+                allowRotateDice = false;
+            }
             for (c = 0; c < playt.cards.length; c++) {
                 playt.cards[c].include = 0;
                 for (i in urlParams) {
@@ -90,6 +99,18 @@ $(function() {
             h += '">';
             h += '</tr>';
         }
+        h += '<tr><td><input id="configTap" type="checkbox" name="_tap" value="true"';
+        if(allowRotateCards)
+            h += ' checked';
+        h += '>Allow cards to be rotated</td></tr>';
+        h += '<tr><td><input id="configReroll" type="checkbox" name="_reroll" value="true"';
+        if(allowReroll)
+            h += ' checked';
+        h += '>Allow dice to be rerolled</td></tr>';
+        h += '<tr><td><input id="configRotate" type="checkbox" name="_rotate" value="true"';
+        if(allowRotateDice)
+            h += ' checked';
+        h += '>Allow dice to be rotated</td></tr>';
         h += '<tr><td><input type="submit" value="Go"></td></tr>';
         h += '</table>';
         h += '</form>';
@@ -137,7 +158,7 @@ $(function() {
         
         $("#playtBoard").append(h);
     })();
-    
+
     // Control form submission
     $('#configForm').submit(function(event) {
         var c, d, v, data = {}, a = [], url = window.location.href.split('?')[0];
@@ -151,6 +172,12 @@ $(function() {
             if (v > 0)
                 data[playt.dice[d].name] = v;
         }
+        if (!$("#configTap").is(':checked'))
+            data['_tap'] = 'false';
+        if (!$("#configReroll").is(':checked'))
+            data['_reroll'] = 'false';
+        if (!$("#configRotate").is(':checked'))
+            data['_rotate'] = 'false';
         for (d in data)
             a.push(encodeURIComponent(d) + "=" + encodeURIComponent(data[d]));
         url += "?" + a.join("&");
@@ -179,22 +206,28 @@ $(function() {
     });
 
     $(".draggableCard").dblclick(function() {
-        var curAngle = $(this).getRotateAngle()[0];
-        if(!curAngle)
-            curAngle = 0;
-        $(this).rotate(curAngle + 90);
+        if(allowRotateCards) {
+            var curAngle = $(this).getRotateAngle()[0];
+            if(!curAngle)
+                curAngle = 0;
+            $(this).rotate(curAngle + 90);
+        }
     });
 
     $(".draggableDice").click(function() {
-        var curAngle = $(this).getRotateAngle()[0];
-        if(!curAngle)
-            curAngle = 0;
-        $(this).rotate(curAngle + 90);
+        if(allowRotateDice) {
+            var curAngle = $(this).getRotateAngle()[0];
+            if(!curAngle)
+                curAngle = 0;
+            $(this).rotate(curAngle + 90);
+        }
     });
 
     $(".draggableDice").dblclick(function() {
-        var i, d = $(this).attr("alt");
-        i = Math.floor((Math.random() * playt.dice[d].images.length));
-        $(this).attr("src", playt.dice[d].images[i]);
+        if(allowReroll) {
+            var i, d = $(this).attr("alt");
+            i = Math.floor((Math.random() * playt.dice[d].images.length));
+            $(this).attr("src", playt.dice[d].images[i]);
+        }
     });
 });
