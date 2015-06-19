@@ -15,5 +15,5 @@ License
 
 /css/, /js/, sample dice, and sample cards Copyright and license by their respective owners.
 
-Main source code Copyright (c) 2014 Peter Vasiliauskas
+Main source code Copyright (c) 2015 Peter Vasiliauskas
 Available under the MIT License
